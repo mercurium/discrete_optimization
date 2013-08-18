@@ -61,6 +61,23 @@ def two_change(solution, dist):
 	return solution 
 
 
+def get_tour_start(customerCount,vehicleCount,vehicleCapacity,customers):
+	
+	vehicleTours = []
+	for v in range(vehicleCount):
+		vehicleTours.append([])
+	capacityRemaining = [vehicleCapacity] * vehicleCount
+
+	seen = set()
+	for vehicle in range(len(vehicleTours)):
+		next_loc = random.randint(1,customerCount-1)
+		while next_loc in seen:
+			next_loc = random.randint(1,customerCount-1)
+		vehicleTours[vehicle].append(next_loc)
+		capacityRemaining[vehicle] -= customers[next_loc][0]		
+		seen.add(next_loc)
+	return vehicleTours, capacityRemaining, seen
+
 def solveIt(inputData):
 	# Modify this code to run your optimization algorithm
 
@@ -80,24 +97,6 @@ def solveIt(inputData):
 		customers.append((int(parts[0]), float(parts[1]),float(parts[2])))
 
 	distance = distances(customers)
-		#### Naive solution
-	#customerIndexs = set(range(1, customerCount))  # start at 1 to remove depot index
-
-		
-	#for v in range(0, vehicleCount):
-	#	# print "Start Vehicle: ",v
-	#	vehicleTours.append([])
-	#	capacityRemaining = vehicleCapacity
-	#	while sum([capacityRemaining >= customers[ci][0] for ci in customerIndexs]) > 0:
-	#		used = set()
-	#		order = sorted(customerIndexs, key=lambda ci: -customers[ci][0])
-	#		for ci in order:
-	#			if capacityRemaining >= customers[ci][0]:
-	#				capacityRemaining -= customers[ci][0]
-	#				vehicleTours[v].append(ci)
-	#				# print '   add', ci, capacityRemaining
-	#				used.add(ci)
-	#		customerIndexs -= used
 
 	##################################################
 	###########                      #################
@@ -105,25 +104,11 @@ def solveIt(inputData):
 	###########                      #################
 	##################################################
 
-	# build a trivial solution
-	# assign customers to vehicles starting by the largest customer demands
 
 	best_seen = float('inf')
 	error_count = 0
-	for iteration in xrange(500000):
-		vehicleTours = []
-		for v in range(vehicleCount):
-			vehicleTours.append([])
-		capacityRemaining = [vehicleCapacity] * vehicleCount
-
-		seen = set()
-		for vehicle in range(len(vehicleTours)):
-			next_loc = random.randint(1,customerCount-1)
-			while next_loc in seen:
-				next_loc = random.randint(1,customerCount-1)
-			vehicleTours[vehicle].append(next_loc)
-			capacityRemaining[vehicle] -= customers[next_loc][0]		
-			seen.add(next_loc)
+	for iteration in xrange(50):
+		vehicleTours, capacityRemaining, seen = get_tour_start(customerCount,vehicleCount, vehicleCapacity, customers)
 
 		
 		not_visited = set(range(1,customerCount)).difference(seen)
@@ -202,8 +187,8 @@ def solveIt(inputData):
 			print [len(x) for x in vehicleTours]
 			best_seen = obj
 			best_sol = vehicleTours
-		if best_seen < 1193:
-			break
+		#if best_seen < 1193:
+		#	break
 
 	vehicleTours = best_sol
 
