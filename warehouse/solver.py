@@ -65,21 +65,27 @@ def solveIt(inputData):
 			solution[c] = warehouseIndex
 			capacityRemaining[warehouseIndex] -= customerSizes[c]
 
-	used = [0]*warehouseCount
-	for wa in solution:
-		used[wa] = 1
+	################################################### 
+	############### Above is naive solution ###########
+	################################################### 
 
+	usage_count = dict()   ### Keeping track of which warehouses are used.
+	for i in range(warehouseCount): usage_count[i] = 0
+	for i in solution: usage_count[i] += 1
 
 	for c in xrange(customerCount):
+		cust = customerCosts[c]
+
+		current_cost = cust[solution[c]]
+		if usage_count[solution[c]] == 1:
+			current_cost += warehouses[solution[c]][1]
+
 		for w in xrange(warehouseCount):
-			if not used[w] and warehouses[w][1] + customerCosts[c][w] < warehouses[solution[c]][1] + customerCosts[c][solution[c]]:
-				if capacityRemaining[w] > customerSizes[c]:
-					solution[c] = w
-					capacityRemaining[w] -= customerSizes[c]
-			elif used[w] and customerCosts[c][w] < warehouses[solution[c]][1] + customerCosts[c][solution[c]]:
-				if capacityRemaining[w] > customerSizes[c]:
-					solution[c] = w
-					capacityRemaining[w] -= customerSizes[c]
+			new_cost = cust[w] + (warehouses[w][1] if usage_count[w] == 0 else 0)
+			if new_cost <  current_cost and capacityRemaining[w] > customerSizes[c]:
+				solution[c] = w
+				capacityRemaining[w] -= customerSizes[c]
+				usage_count[w] +=1
 
 
 	used = [0]*warehouseCount
