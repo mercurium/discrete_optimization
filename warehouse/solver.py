@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+import random
 def naive_solution(solution, warehouseCount,customerCount,warehouses,customerSizes,customerCosts, capacityRemaining):
 	
 	warehouseIndex = 0
@@ -32,13 +32,90 @@ def one_switch(solution, warehouseCount,customerCount,warehouses,customerSizes,c
 
 			for w in xrange(warehouseCount):
 				new_cost = cust[w] + (warehouses[w][1] if usage_count[w] == 0 else 0)
-				if new_cost <  current_cost and capacityRemaining[w] > customerSizes[c]:
+				if new_cost <  current_cost+1 and capacityRemaining[w] > customerSizes[c]:
+					capacityRemaining[solution[c]] += customerSizes[c]
 					solution[c] = w
 					capacityRemaining[w] -= customerSizes[c]
 					usage_count[w] +=1
+					#print "Improvement from moving", c, "to", w
+	return solution, capacityRemaining, usage_count
+
+def swap_pairs(solution, warehouseCount,customerCount,warehouses,customerSizes,customerCosts, capacityRemaining, usage_count):
+	for c1 in range(customerCount):
+		for c2 in range(c1):
+			if min(capacityRemaining) < 0: break
+			#print c1,c2
+			if (customerCosts[c1][solution[c2]] + customerCosts[c2][solution[c1]] - random.random() >=  \
+			   customerCosts[c1][solution[c1]] + customerCosts[c2][solution[c2]]): 
+				continue
+			if capacityRemaining[solution[c1]] + customerSizes[c1] - customerSizes[c2] >= 0 and \
+			   capacityRemaining[solution[c2]] + customerSizes[c2] - customerSizes[c1] >= 0:
+				capacityRemaining[solution[c1]] += customerSizes[c1] - customerSizes[c2]
+				capacityRemaining[solution[c2]] += customerSizes[c2] - customerSizes[c1]
+				solution[c1],solution[c2] = solution[c2],solution[c1]
+
+				used = [0]*warehouseCount
+				for wa in solution:
+					used[wa] = 1
+
+				# calculate the cost of the solution
+				obj = sum([warehouses[x][1]*used[x] for x in range(0,warehouseCount)])
+				for c in range(0, customerCount):
+					obj += customerCosts[c][solution[c]]
+				#print "improvement?", c1, c2, obj ,customerCosts[c1][solution[c2]] + customerCosts[c2][solution[c1]] - customerCosts[c1][solution[c1]] - customerCosts[c2][solution[c2]]  # to see the amount of gain we've made.
 	return solution, capacityRemaining, usage_count
 
 
+def best_guess_placing(solution, warehouseCount,customerCount,warehouses,customerSizes,customerCosts, capacityRemaining, usage_count):
+	for iteration in range(100):
+		improved = False
+		improvements = []
+		for w in range(warehouseCount):  # Find out where we can put each customer that's the best. Computing expected gain.
+			improvements += [[0] * customerCount]
+			for c in xrange(customerCount):
+				if solution[c] == -1: improvements[w][c] = 10**6 - customerCosts[c][w]  #put people who haven't been placed yet first.
+				elif solution[c] == w:
+					improvements[w][c] = 0
+					continue
+				else: improvements[w][c] = customerCosts[c][solution[c]] - customerCosts[c][w] 
+				improvements[w][c] = max(improvements[w][c],0)
+		order = range(warehouseCount)
+		random.shuffle(order)	
+		for w in order: #xrange(warehouseCount-1,-1,-1):
+			warehouse = improvements[w]
+			warehouse_gain = sum(warehouse)
+			if usage_count[w] == 0: warehouse_gain -= warehouses[w][1]  #If nobody's using that warehouse yet, we need to open it.
+			if warehouse_gain > warehouses[w][1]:
+				improv = [(improvements[w][c],c) for c in range(customerCount)]
+				improv.sort()
+				improv = improv[::-1]
+
+				for c in xrange(customerCount):
+					if warehouse[improv[c][1]] == 0: #Once we stop seeing improvement, quit
+						break
+					if capacityRemaining[w] > customerSizes[improv[c][1]]: #We can't do anything if we can't fit it... =/
+						improved = True
+						if solution[improv[c][1]] != -1:
+							usage_count[solution[improv[c][1]]] -= 1
+							capacityRemaining[solution[improv[c][1]]] += customerSizes[improv[c][1]]
+						usage_count[w] += 1
+						solution[improv[c][1]] = w
+						capacityRemaining[w] -= customerSizes[improv[c][1]]
+				if improved: break
+		
+		used = [0]*warehouseCount
+		for wa in solution:
+			used[wa] = 1
+
+		# calculate the cost of the solution
+		obj = sum([warehouses[x][1]*used[x] for x in range(0,warehouseCount)])
+		for c in range(0, customerCount):
+			obj += customerCosts[c][solution[c]]
+		#print iteration, obj, sum([(1 if c == -1 else 0) for c in solution]) # to see the amount of gain we've made.
+	
+		if not improved:
+			break
+	return solution, capacityRemaining, usage_count, obj
 
 def solveIt(inputData):
 	# Modify this code to run your optimization algorithm
@@ -78,117 +155,29 @@ def solveIt(inputData):
 	customerCosts (cost to go to each warehouse)
 	"""
 
-	# build a trivial solution
-	# pack the warehouses one by one until all the customers are served
-
-	solution = [-1] * customerCount
-	capacityRemaining = [w[0] for w in warehouses]
-
-
-
-	usage_count = dict()   ### Keeping track of which warehouses are used.
-	for i in range(warehouseCount): usage_count[i] = 0
-
-
-	###################################################	
-	###################################################	
-	###################################################	
-	
+	best_solution_val = float('inf')
 	for iteration in range(100):
-		improved = False
-		improvements = []
-		for w in range(warehouseCount): 
-			improvements += [[0] * customerCount]
-			#improvements += [[ (customerCosts[c][solution[c]] - customerCosts[c][w] )  for c in range(customerCount) ] ]
-			for c in xrange(customerCount):
-				if solution[c] == -1:
-					improvements[w][c] = 10**8 - customerCosts[c][w]
-				elif solution[c] == w:
-					improvements[w][c] = 0
-					continue
-				else:
-					improvements[w][c] = customerCosts[c][solution[c]] - customerCosts[c][w] 
-				improvements[w][c] = max(improvements[w][c],0)
-	
-		for w in xrange(warehouseCount-1,-1,-1):
-			warehouse = improvements[w]
-			warehouse_gain = sum(warehouse)
 
-			if warehouse_gain > warehouses[w][1]:
-				improv = [(improvements[w][c],c) for c in range(customerCount)]
-				improv.sort()
-				improv = improv[::-1]
+		solution = [-1] * customerCount
+		capacityRemaining = [w[0] for w in warehouses]
+		usage_count = dict()   ### Keeping track of which warehouses are used.
+		for i in range(warehouseCount): usage_count[i] = 0
 
-				for c in xrange(customerCount):
-					if warehouse[improv[c][1]] == 0:
-						break
-					if capacityRemaining[w] > customerSizes[improv[c][1]]:
-						improved = True
-						if solution[improv[c][1]] != -1:
-							usage_count[solution[improv[c][1]]] -= 1
-							capacityRemaining[solution[improv[c][1]]] += customerSizes[improv[c][1]]
-						usage_count[w] += 1
-						solution[improv[c][1]] = w
-						capacityRemaining[w] -= customerSizes[improv[c][1]]
-				if improved: break
+		solution, capacityRemaining, usage_count,obj = best_guess_placing(solution, warehouseCount,customerCount,warehouses,customerSizes,customerCosts, capacityRemaining, usage_count)
+		print "Step 1 done"
+		#solution, capacityRemaining, usage_count = swap_pairs(solution, warehouseCount,customerCount,warehouses,customerSizes,customerCosts, capacityRemaining, usage_count)
+				   
+		solution, capacityRemaining, usage_count = one_switch(solution, warehouseCount,customerCount,warehouses,customerSizes,customerCosts, capacityRemaining)
+		print "Step 2 done", iteration, best_solution_val
 		
-		used = [0]*warehouseCount
-		for wa in solution:
-			used[wa] = 1
+		if min(capacityRemaining) < 0: print "ERROR", iteration, capacityRemaining	
+		if obj < best_solution_val:
+			best_solution_val = obj
+			best_sol = solution
+			print obj, iteration
+		if iteration % 128 == 0: print iteration
 
-		# calculate the cost of the solution
-		obj = sum([warehouses[x][1]*used[x] for x in range(0,warehouseCount)])
-		for c in range(0, customerCount):
-			obj += customerCosts[c][solution[c]]
-		print iteration, obj # to see the amount of gain we've made.
-	
-		if not improved:
-			break
-
-
-	###################################################
-	############### Try swapping pairs around    ######
-	###################################################
-
-	for c1 in range(customerCount):
-		for c2 in range(c1):
-			#print c1,c2
-			if (customerCosts[c1][solution[c2]] + customerCosts[c2][solution[c1]] >=  \
-			   customerCosts[c1][solution[c1]] + customerCosts[c2][solution[c2]]): 
-				continue
-			if capacityRemaining[solution[c1]] + customerSizes[c1] - customerSizes[c2] >= 0 and \
-			   capacityRemaining[solution[c2]] + customerSizes[c2] - customerSizes[c1] >= 0:
-				solution[c1],solution[c2] = solution[c2],solution[c1]
-				capacityRemaining[solution[c1]] += customerSizes[c1] - customerSizes[c2]
-				capacityRemaining[solution[c2]] += customerSizes[c2] - customerSizes[c1]
-
-				used = [0]*warehouseCount
-				for wa in solution:
-					used[wa] = 1
-
-				# calculate the cost of the solution
-				obj = sum([warehouses[x][1]*used[x] for x in range(0,warehouseCount)])
-				for c in range(0, customerCount):
-					obj += customerCosts[c][solution[c]]
-				print "improvement?", c1, c2, obj # to see the amount of gain we've made.
-
-			else:
-				#print "failed on space", c1,c2, capacityRemaining[solution[c1]], capacityRemaining[solution[c2]]
-				pass
-				
-			   
-
-
-
-
-
-
-
-
-
-
-
-
+	solution = best_sol
 
 	###################################################
 	################  Problem solving end    ##########

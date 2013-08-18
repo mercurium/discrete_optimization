@@ -72,6 +72,7 @@ def get_tour_start(customerCount,vehicleCount,vehicleCapacity,customers, distanc
 	first_location = random.randint(1,customerCount-1)  #going with random first location 
 	seen.add(first_location)
 	vehicleTours[0].append(first_location)
+	capacityRemaining[0] -= customers[first_location][0]
 	for vehicle in range(1,len(vehicleTours)):  #After that, add the point that's furthest from current points
 		max_dist = 10**8
 		for c in range(1,customerCount):
@@ -85,6 +86,49 @@ def get_tour_start(customerCount,vehicleCount,vehicleCapacity,customers, distanc
 		seen.add(max_vehicle)
 
 	return vehicleTours, capacityRemaining, seen
+
+def get_rest_of_tour(customerCount,vehicleCount,vehicleCapacity, customers, distance, vehicleTours, capacityRemaining, seen):
+	
+	not_visited = set(range(1,customerCount)).difference(seen)
+	not_visited = list(not_visited)
+	random.shuffle(not_visited)
+	for city in not_visited:
+		min_dist = float('inf')
+		min_vehicle = -1 
+		for vehicle in range(vehicleCount):
+			if capacityRemaining[vehicle] < customers[city][0]:
+				continue
+			dist = sum( [distance[(vehicleTours[vehicle][i],city)] for i in xrange(len(vehicleTours[vehicle])) ])
+			if dist < min_dist:
+				min_dist = dist
+				min_vehicle = vehicle
+
+		vehicleTours[min_vehicle].append(city)
+		capacityRemaining[min_vehicle] -= customers[city][0]
+	return vehicleTours, capacityRemaining
+
+def upgradeTours( vehicleTours, distance):
+	for tour in xrange(len(vehicleTours)):
+		vehicleTours[tour] = two_change(vehicleTours[tour],distance)
+		best_obj = sum([distance[(vehicleTours[tour][i],vehicleTours[tour][i+1])] for i in xrange(len(vehicleTours[tour])-1)]) + distance[(vehicleTours[tour][0],vehicleTours[tour][-1])]
+		best_vehicle_sol = vehicleTours[tour][:]
+		iters = 0
+		while iters < 10:
+			starter, ender, shift = len(vehicleTours[tour])/4, len(vehicleTours[tour])/2, (iters*17 + iters**2/4)%len(vehicleTours[tour])
+			vehicleTours[tour] = best_vehicle_sol[shift:] + best_vehicle_sol[:shift]
+			part = vehicleTours[tour][starter:ender]
+			random.shuffle(part)
+			vehicleTours[tour] = vehicleTours[tour][:starter] + part + vehicleTours[tour][ender:]
+			vehicleTours[tour] = two_change(vehicleTours[tour], distance)
+			obj = sum([distance[(vehicleTours[tour][i],vehicleTours[tour][i+1])] for i in xrange(len(vehicleTours[tour])-1)]) + distance[(vehicleTours[tour][0],vehicleTours[tour][-1])]
+			if obj < best_obj:
+				best_obj = obj
+				best_vehicle_sol = vehicleTours[tour][:]
+			iters +=1
+
+		vehicleTours[tour] = best_vehicle_sol
+	return vehicleTours
+
 
 def solveIt(inputData):
 	# Modify this code to run your optimization algorithm
@@ -115,25 +159,9 @@ def solveIt(inputData):
 
 	best_seen = float('inf')
 	error_count = 0
-	for iteration in xrange(500000):
+	for iteration in xrange(150000):
 		vehicleTours, capacityRemaining, seen = get_tour_start(customerCount,vehicleCount, vehicleCapacity, customers, distance)
-
-		
-		not_visited = set(range(1,customerCount)).difference(seen)
-		not_visited = list(not_visited)
-		random.shuffle(not_visited)
-		for city in not_visited:
-			min_dist = float('inf')
-			min_vehicle = -1 
-			for vehicle in range(vehicleCount):
-				if capacityRemaining[vehicle] < customers[city][0]:
-					continue
-				dist = sum( [distance[(vehicleTours[vehicle][i],city)] for i in xrange(len(vehicleTours[vehicle])) ])
-				if dist < min_dist:
-					min_dist = dist
-					min_vehicle = vehicle
-			vehicleTours[min_vehicle].append(city)
-			capacityRemaining[min_vehicle] -= customers[city][0]
+		vehicleTours, capacityRemaining = get_rest_of_tour(customerCount,vehicleCount,vehicleCapacity, customers, distance, vehicleTours, capacityRemaining, seen)
 
 		if iteration % 1024 == 0:
 			print iteration
@@ -150,26 +178,7 @@ def solveIt(inputData):
 		############################################################
 		################## Optimizing each cycle        ############
 		############################################################
-		for tour in xrange(len(vehicleTours)):
-			vehicleTours[tour] = two_change(vehicleTours[tour],distance)
-			best_obj = sum([distance[(vehicleTours[tour][i],vehicleTours[tour][i+1])] for i in xrange(len(vehicleTours[tour])-1)]) + distance[(vehicleTours[tour][0],vehicleTours[tour][-1])]
-			best_vehicle_sol = vehicleTours[tour][:]
-			iters = 0
-			while iters < 50:
-				starter, ender, shift = len(vehicleTours[tour])/4, len(vehicleTours[tour])/2, (iters*17 + iters**2/4)%len(vehicleTours[tour])
-				vehicleTours[tour] = best_vehicle_sol[shift:] + best_vehicle_sol[:shift]
-				part = vehicleTours[tour][starter:ender]
-				random.shuffle(part)
-				vehicleTours[tour] = vehicleTours[tour][:starter] + part + vehicleTours[tour][ender:]
-				vehicleTours[tour] = two_change(vehicleTours[tour], distance)
-				obj = sum([distance[(vehicleTours[tour][i],vehicleTours[tour][i+1])] for i in xrange(len(vehicleTours[tour])-1)]) + distance[(vehicleTours[tour][0],vehicleTours[tour][-1])]
-				if obj < best_obj:
-					best_obj = obj
-					best_vehicle_sol = vehicleTours[tour][:]
-				iters +=1
-
-			vehicleTours[tour] = best_vehicle_sol
-
+		vehicleTours = upgradeTours(vehicleTours, distance)
 
 
 
@@ -189,7 +198,7 @@ def solveIt(inputData):
 					obj += length(customers[vehicleTour[i]],customers[vehicleTour[i + 1]])
 				obj += length(customers[vehicleTour[-1]],customers[depotIndex])
 		if obj < best_seen:
-			print iteration, obj#, [sum([customers[i][0] for i in vehicle]) for vehicle in vehicleTours], vehicleCapacity
+			print iteration, obj #, [sum([customers[i][0] for i in tour]) for tour in vehicleTours], vehicleCapacity
 			best_seen = obj
 			best_sol = vehicleTours
 		if best_seen < 540:
