@@ -10,7 +10,7 @@ def length(customer1, customer2):
 def distances(customers):
 	dists = dict()
 	for i in xrange(len(customers)):
-		for j in xrange(i):
+		for j in xrange(i+1):
 			dists[(i,j)] = length(customers[i],customers[j])
 			dists[(j,i)] = length(customers[i],customers[j])
 	return dists
@@ -110,7 +110,7 @@ def solveIt(inputData):
 
 	best_seen = float('inf')
 	error_count = 0
-	for iteration in xrange(5000000):
+	for iteration in xrange(500000):
 		vehicleTours = []
 		for v in range(vehicleCount):
 			vehicleTours.append([])
@@ -142,19 +142,52 @@ def solveIt(inputData):
 			vehicleTours[min_vehicle].append(city)
 			capacityRemaining[min_vehicle] -= customers[city][0]
 
-		############################################################
-		############### Compute solution cost below: ###############
-		############################################################
+		if iteration % 1024 == 0:
+			print iteration
 
 		if min(capacityRemaining) < 0:
 			error_count +=1
 			continue
+
+
+
+
+
 
 		############################################################
 		################## Optimizing each cycle        ############
 		############################################################
 		for tour in xrange(len(vehicleTours)):
 			vehicleTours[tour] = two_change(vehicleTours[tour],distance)
+			best_obj = sum([distance[(vehicleTours[tour][i],vehicleTours[tour][i+1])] for i in xrange(len(vehicleTours[tour])-1)]) + distance[(vehicleTours[tour][0],vehicleTours[tour][-1])]
+			best_vehicle_sol = vehicleTours[tour][:]
+			iters = 0
+			while iters < 50:
+				starter, ender, shift = len(vehicleTours[tour])/4, len(vehicleTours[tour])/2, (iters*17 + iters**2/4)%len(vehicleTours[tour])
+				vehicleTours[tour] = best_vehicle_sol[shift:] + best_vehicle_sol[:shift]
+				part = vehicleTours[tour][starter:ender]
+				random.shuffle(part)
+				vehicleTours[tour] = vehicleTours[tour][:starter] + part + vehicleTours[tour][ender:]
+				vehicleTours[tour] = two_change(vehicleTours[tour], distance)
+				obj = sum([distance[(vehicleTours[tour][i],vehicleTours[tour][i+1])] for i in xrange(len(vehicleTours[tour])-1)]) + distance[(vehicleTours[tour][0],vehicleTours[tour][-1])]
+				if obj < best_obj:
+					best_obj = obj
+					best_vehicle_sol = vehicleTours[tour][:]
+			#		print "IMPROVEMENT UNLOCKED!!!", obj 
+				iters +=1
+			#	print obj, iters, best_obj
+
+			vehicleTours[tour] = best_vehicle_sol
+
+
+
+
+
+		############################################################
+		############### Compute solution cost below: ###############
+		############################################################
+
+
 
 		obj = 0
 		for v in range(0, vehicleCount):
@@ -166,16 +199,15 @@ def solveIt(inputData):
 				obj += length(customers[vehicleTour[-1]],customers[depotIndex])
 		if obj < best_seen:
 			print iteration, obj, [sum([customers[i][0] for i in vehicle]) for vehicle in vehicleTours], vehicleCapacity
+			print [len(x) for x in vehicleTours]
 			best_seen = obj
 			best_sol = vehicleTours
 		if best_seen < 1193:
 			break
-		if iteration % 4096 == 0:
-			print iteration
 
 	vehicleTours = best_sol
 
-	print "there were:", error_count, "errors... out of...", iteration
+	print "there were:", error_count, "errors... out of...", iteration + 1
 
 
 
