@@ -61,7 +61,7 @@ def two_change(solution, dist):
 	return solution 
 
 
-def get_tour_start(customerCount,vehicleCount,vehicleCapacity,customers):
+def get_tour_start(customerCount,vehicleCount,vehicleCapacity,customers, distance):
 	
 	vehicleTours = []
 	for v in range(vehicleCount):
@@ -69,13 +69,20 @@ def get_tour_start(customerCount,vehicleCount,vehicleCapacity,customers):
 	capacityRemaining = [vehicleCapacity] * vehicleCount
 
 	seen = set()
-	for vehicle in range(len(vehicleTours)):
-		next_loc = random.randint(1,customerCount-1)
-		while next_loc in seen:
-			next_loc = random.randint(1,customerCount-1)
-		vehicleTours[vehicle].append(next_loc)
-		capacityRemaining[vehicle] -= customers[next_loc][0]		
-		seen.add(next_loc)
+	first_location = random.randint(1,customerCount-1)  #going with random first location 
+	seen.add(first_location)
+	vehicleTours[0].append(first_location)
+	for vehicle in range(1,len(vehicleTours)):  #After that, add the point that's furthest from current points
+		max_dist = 0 
+		for c in range(customerCount):
+			dist_vehicle = sum( [ distance[(x[0],c)]  for x in vehicleTours[:vehicle] ] ) * (random.random() * 3)
+			if dist_vehicle > max_dist and c not in seen:
+				max_dist = dist_vehicle
+				max_vehicle = c
+
+		vehicleTours[vehicle].append(max_vehicle)
+		capacityRemaining[vehicle] -= customers[max_vehicle][0]		
+		seen.add(max_vehicle)
 	return vehicleTours, capacityRemaining, seen
 
 def solveIt(inputData):
@@ -107,8 +114,8 @@ def solveIt(inputData):
 
 	best_seen = float('inf')
 	error_count = 0
-	for iteration in xrange(50):
-		vehicleTours, capacityRemaining, seen = get_tour_start(customerCount,vehicleCount, vehicleCapacity, customers)
+	for iteration in xrange(5000):
+		vehicleTours, capacityRemaining, seen = get_tour_start(customerCount,vehicleCount, vehicleCapacity, customers, distance)
 
 		
 		not_visited = set(range(1,customerCount)).difference(seen)
@@ -120,7 +127,9 @@ def solveIt(inputData):
 			for vehicle in range(vehicleCount):
 				if capacityRemaining[vehicle] < customers[city][0]:
 					continue
-				dist = distance[(vehicleTours[vehicle][-1],city)] + distance[(city,0)] - distance[(0,vehicleTours[vehicle][-1])]
+				#dist = distance[(vehicleTours[vehicle][-1],city)] + distance[(city,0)] - distance[(0,vehicleTours[vehicle][-1])]
+				dist = sum( [distance[(vehicleTours[vehicle][i],city)] for i in xrange(len(vehicleTours[vehicle])) ])
+				#dist = dist * 1.0 / len(vehicleTours[vehicle])
 				if dist < min_dist:
 					min_dist = dist
 					min_vehicle = vehicle
@@ -183,12 +192,11 @@ def solveIt(inputData):
 					obj += length(customers[vehicleTour[i]],customers[vehicleTour[i + 1]])
 				obj += length(customers[vehicleTour[-1]],customers[depotIndex])
 		if obj < best_seen:
-			print iteration, obj, [sum([customers[i][0] for i in vehicle]) for vehicle in vehicleTours], vehicleCapacity
-			print [len(x) for x in vehicleTours]
+			print iteration, obj#, [sum([customers[i][0] for i in vehicle]) for vehicle in vehicleTours], vehicleCapacity
 			best_seen = obj
 			best_sol = vehicleTours
-		#if best_seen < 1193:
-		#	break
+		if best_seen < 830:
+			break
 
 	vehicleTours = best_sol
 
