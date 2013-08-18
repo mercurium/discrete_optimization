@@ -107,7 +107,7 @@ def nearest_neighbor(points, nodeCount):
 	
 	return solution
 
-def two_change(solution,points, dist):
+def two_change(solution, dist):
 	edge_dict = dict()
 	for i in xrange(len(solution)-1):
 		edge_dict[solution[i]] = solution[i+1]
@@ -170,7 +170,7 @@ def solveIt(inputData):
 
 		dist = distance(points)
 		solution = get_approx_sol(points, nodeCount)[::-1]
-		solution = two_change(solution,points, dist) 
+		solution = two_change(solution, dist) 
 		best_obj = sum([dist[(solution[i],solution[i+1])] for i in xrange(nodeCount-1)]) + dist[(solution[0],solution[-1])]
 		best_sol = solution[:]
 		print solution, best_obj
@@ -181,7 +181,7 @@ def solveIt(inputData):
 			part = solution[starter:ender]
 			random.shuffle(part)
 			solution = solution[:starter] + part + solution[ender:]
-			solution = two_change(solution,points, dist)
+			solution = two_change(solution, dist)
 			obj = sum([dist[(solution[i],solution[i+1])] for i in xrange(nodeCount-1)]) + dist[(solution[0],solution[-1])]
 			if obj < best_obj:
 				best_obj = obj

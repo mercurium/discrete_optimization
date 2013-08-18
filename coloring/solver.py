@@ -28,6 +28,7 @@ def solveIt(inputData):
 	for i in xrange(nodeCount):
 		edge_set[i] = sorted(list(edge_set[i]))
 	################################################################################# Above this is creating the dictionary of edges...
+
 	solution = [-1] * nodeCount
 	if generating:
 		lst = range(nodeCount)
@@ -43,7 +44,7 @@ def solveIt(inputData):
 			if color not in temp_set:
 				solution[i] = color
 				break
-	print lst
+	#print lst
 	"""boiler plate provided output."""
 	# prepare the solution in the specified output format
 	outputData = str(max(solution)+1) + ' ' + str(0) + '\n'
