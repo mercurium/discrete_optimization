@@ -103,7 +103,7 @@ def solveIt(inputData):
 			#improvements += [[ (customerCosts[c][solution[c]] - customerCosts[c][w] )  for c in range(customerCount) ] ]
 			for c in xrange(customerCount):
 				if solution[c] == -1:
-					improvements[w][c] = 10**5 - customerCosts[c][w]
+					improvements[w][c] = 10**8 - customerCosts[c][w]
 				elif solution[c] == w:
 					improvements[w][c] = 0
 					continue
@@ -125,11 +125,12 @@ def solveIt(inputData):
 						break
 					if capacityRemaining[w] > customerSizes[improv[c][1]]:
 						improved = True
-						if solution[improv[c][1]] != -1: usage_count[solution[improv[c][1]]] -= 1
+						if solution[improv[c][1]] != -1:
+							usage_count[solution[improv[c][1]]] -= 1
+							capacityRemaining[solution[improv[c][1]]] += customerSizes[improv[c][1]]
 						usage_count[w] += 1
 						solution[improv[c][1]] = w
 						capacityRemaining[w] -= customerSizes[improv[c][1]]
-				#print warehouse_gain, warehouses[w][1], w
 				if improved: break
 		
 		used = [0]*warehouseCount
@@ -140,16 +141,43 @@ def solveIt(inputData):
 		obj = sum([warehouses[x][1]*used[x] for x in range(0,warehouseCount)])
 		for c in range(0, customerCount):
 			obj += customerCosts[c][solution[c]]
-		print iteration, obj
+		print iteration, obj # to see the amount of gain we've made.
 	
 		if not improved:
 			break
 
 
-	
+	###################################################
+	############### Try swapping pairs around    ######
+	###################################################
 
+	for c1 in range(customerCount):
+		for c2 in range(c1):
+			#print c1,c2
+			if (customerCosts[c1][solution[c2]] + customerCosts[c2][solution[c1]] >=  \
+			   customerCosts[c1][solution[c1]] + customerCosts[c2][solution[c2]]): 
+				continue
+			if capacityRemaining[solution[c1]] + customerSizes[c1] - customerSizes[c2] >= 0 and \
+			   capacityRemaining[solution[c2]] + customerSizes[c2] - customerSizes[c1] >= 0:
+				solution[c1],solution[c2] = solution[c2],solution[c1]
+				capacityRemaining[solution[c1]] += customerSizes[c1] - customerSizes[c2]
+				capacityRemaining[solution[c2]] += customerSizes[c2] - customerSizes[c1]
 
+				used = [0]*warehouseCount
+				for wa in solution:
+					used[wa] = 1
 
+				# calculate the cost of the solution
+				obj = sum([warehouses[x][1]*used[x] for x in range(0,warehouseCount)])
+				for c in range(0, customerCount):
+					obj += customerCosts[c][solution[c]]
+				print "improvement?", c1, c2, obj # to see the amount of gain we've made.
+
+			else:
+				#print "failed on space", c1,c2, capacityRemaining[solution[c1]], capacityRemaining[solution[c2]]
+				pass
+				
+			   
 
 
 
