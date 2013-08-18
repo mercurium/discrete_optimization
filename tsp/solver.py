@@ -89,7 +89,7 @@ def greedy(points, nodeCount,dist): #NOTE, this code doesn't currently work T.T.
 		else: solution.append(n)
 	return solution
 
-def nearest_neighbor(points, nodeCount,dist):
+def nearest_neighbor(points, nodeCount):
 	solution = [0]
 	seen = set([0])
 	while len(solution) < nodeCount:
@@ -98,9 +98,10 @@ def nearest_neighbor(points, nodeCount,dist):
 		for i in xrange(nodeCount):
 			if i in seen:
 				continue
-			if dist[(solution[-1],i)] < min_val:
-				min_val = dist[(solution[-1],i)]
+			if length(points[solution[-1]],points[i]) < min_val:
+				min_val = length(points[solution[-1]],points[i]) # dist[(solution[-1],i)]
 				min_num = i
+		print len(solution)
 		solution.append(min_num)
 		seen.add(min_num)
 	
@@ -165,36 +166,37 @@ def solveIt(inputData):
 
 	#-------------------------Don't need to worry about anything above this line-------------#
 
-	dist = distance(points)
-
 	if len(points) < 2000:
+
+		dist = distance(points)
 		solution = get_approx_sol(points, nodeCount)[::-1]
+		solution = two_change(solution,points, dist) 
+		best_obj = sum([dist[(solution[i],solution[i+1])] for i in xrange(nodeCount-1)]) + dist[(solution[0],solution[-1])]
+		best_sol = solution[:]
+		print solution, best_obj
+		iters = 0
+		while iters < 2000:# and best_obj > 37600:
+			starter, ender, shift = nodeCount/4, nodeCount/3, (iters*17 + iters**2/4)%nodeCount
+			solution = best_sol[shift:] + best_sol[:shift]
+			part = solution[starter:ender]
+			random.shuffle(part)
+			solution = solution[:starter] + part + solution[ender:]
+			solution = two_change(solution,points, dist)
+			obj = sum([dist[(solution[i],solution[i+1])] for i in xrange(nodeCount-1)]) + dist[(solution[0],solution[-1])]
+			if obj < best_obj:
+				best_obj = obj
+				best_sol = solution[:]
+				print "IMPROVEMENT UNLOCKED!!!", obj 
+			iters +=1
+			print obj, iters, best_obj
+
+		solution = best_sol
 	else:
-		solution = range(nodeCount)
-	solution = two_change(solution,points, dist) 
+		solution = nearest_neighbor(points, nodeCount) #range(nodeCount)
+		best_obj = sum([length(points[solution[i]],points[solution[i+1]]) for i in xrange(nodeCount -1)]) + length(points[solution[0]],points[solution[-1]])
 
 	################################################### Going to try switching sets of two edges around.
 
-	best_obj = sum([dist[(solution[i],solution[i+1])] for i in xrange(nodeCount-1)]) + dist[(solution[0],solution[-1])]
-	best_sol = solution[:]
-	print solution, best_obj
-	iters = 0
-	while iters < 2000:# and best_obj > 37600:
-		starter, ender, shift = nodeCount/4, nodeCount/3, (iters*17 + iters**2/4)%nodeCount
-		solution = best_sol[shift:] + best_sol[:shift]
-		part = solution[starter:ender]
-		random.shuffle(part)
-		solution = solution[:starter] + part + solution[ender:]
-		solution = two_change(solution,points, dist)
-		obj = sum([dist[(solution[i],solution[i+1])] for i in xrange(nodeCount-1)]) + dist[(solution[0],solution[-1])]
-		if obj < best_obj:
-			best_obj = obj
-			best_sol = solution[:]
-			print "IMPROVEMENT UNLOCKED!!!", obj 
-		iters +=1
-		print obj, iters, best_obj
-
-	solution = best_sol
 	obj = best_obj
 
 	# prepare the solution in the specified output format
@@ -211,8 +213,8 @@ if __name__ == '__main__':
 		inputDataFile = open(fileLocation, 'r')
 		inputData = ''.join(inputDataFile.readlines())
 		inputDataFile.close()
-		start = time.time()
-		print solveIt(inputData)
+		#start = time.time()
+		print solveIt(inputData)[:50]
 	else:
 		print 'This test requires an input file. Please select one from the data directory. (i.e. python solver.py ./data/tsp_51_1)'
 
