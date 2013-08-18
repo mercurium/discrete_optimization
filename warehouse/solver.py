@@ -27,6 +27,27 @@ def solveIt(inputData):
 		customerSizes.append(customerSize)
 		customerCosts.append(customerCost)
 
+	###################################################
+	############Problem solving start #################
+	###################################################
+
+
+
+
+
+
+
+
+
+
+
+	""" Variables:
+	warehouseCount, customerCount
+	warehouses (capacity, costs per warehouse)
+	customerSizes (demand/customer)
+	customerCosts (cost to go to each warehouse)
+	"""
+
 	# build a trivial solution
 	# pack the warehouses one by one until all the customers are served
 
@@ -47,6 +68,28 @@ def solveIt(inputData):
 	used = [0]*warehouseCount
 	for wa in solution:
 		used[wa] = 1
+
+
+	for c in xrange(customerCount):
+		for w in xrange(warehouseCount):
+			if not used[w] and warehouses[w][1] + customerCosts[c][w] < warehouses[solution[c]][1] + customerCosts[c][solution[c]]:
+				if capacityRemaining[w] > customerSizes[c]:
+					solution[c] = w
+					capacityRemaining[w] -= customerSizes[c]
+			elif used[w] and customerCosts[c][w] < warehouses[solution[c]][1] + customerCosts[c][solution[c]]:
+				if capacityRemaining[w] > customerSizes[c]:
+					solution[c] = w
+					capacityRemaining[w] -= customerSizes[c]
+
+
+	used = [0]*warehouseCount
+	for wa in solution:
+		used[wa] = 1
+
+
+	###################################################
+	################  Problem solving end    ##########
+	###################################################
 
 	# calculate the cost of the solution
 	obj = sum([warehouses[x][1]*used[x] for x in range(0,warehouseCount)])
