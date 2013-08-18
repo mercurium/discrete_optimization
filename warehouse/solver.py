@@ -1,6 +1,45 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+def naive_solution(solution, warehouseCount,customerCount,warehouses,customerSizes,customerCosts, capacityRemaining):
+	
+	warehouseIndex = 0
+	for c in range(0, customerCount):
+		if capacityRemaining[warehouseIndex] >= customerSizes[c]:
+			solution[c] = warehouseIndex
+			capacityRemaining[warehouseIndex] -= customerSizes[c]
+		else:
+			warehouseIndex += 1
+			assert capacityRemaining[warehouseIndex] >= customerSizes[c]
+			solution[c] = warehouseIndex
+			capacityRemaining[warehouseIndex] -= customerSizes[c]
+	return (solution, capacityRemaining)
+
+
+def one_switch(solution, warehouseCount,customerCount,warehouses,customerSizes,customerCosts, capacityRemaining):
+
+	usage_count = dict()   ### Keeping track of which warehouses are used.
+	for i in range(warehouseCount): usage_count[i] = 0
+	for i in solution: usage_count[i] += 1
+
+	###this setup seems to be hurting my later solution... o.O;;
+	for iteration in range(3): #just in case a new place opens up that's better...
+		for c in xrange(customerCount):
+			cust = customerCosts[c]
+			current_cost = cust[solution[c]]
+			if usage_count[solution[c]] == 1:
+				current_cost += warehouses[solution[c]][1]
+
+			for w in xrange(warehouseCount):
+				new_cost = cust[w] + (warehouses[w][1] if usage_count[w] == 0 else 0)
+				if new_cost <  current_cost and capacityRemaining[w] > customerSizes[c]:
+					solution[c] = w
+					capacityRemaining[w] -= customerSizes[c]
+					usage_count[w] +=1
+	return solution, capacityRemaining, usage_count
+
+
+
 def solveIt(inputData):
 	# Modify this code to run your optimization algorithm
 
@@ -32,15 +71,6 @@ def solveIt(inputData):
 	###################################################
 
 
-
-
-
-
-
-
-
-
-
 	""" Variables:
 	warehouseCount, customerCount
 	warehouses (capacity, costs per warehouse)
@@ -54,41 +84,10 @@ def solveIt(inputData):
 	solution = [-1] * customerCount
 	capacityRemaining = [w[0] for w in warehouses]
 
-	warehouseIndex = 0
-	#for c in range(0, customerCount):
-	#	if capacityRemaining[warehouseIndex] >= customerSizes[c]:
-	#		solution[c] = warehouseIndex
-	#		capacityRemaining[warehouseIndex] -= customerSizes[c]
-	#	else:
-	#		warehouseIndex += 1
-	#		assert capacityRemaining[warehouseIndex] >= customerSizes[c]
-	#		solution[c] = warehouseIndex
-	#		capacityRemaining[warehouseIndex] -= customerSizes[c]
 
-	################################################### 
-	############### Above is naive solution ###########
-	################################################### 
 
 	usage_count = dict()   ### Keeping track of which warehouses are used.
 	for i in range(warehouseCount): usage_count[i] = 0
-	#for i in solution: usage_count[i] += 1
-
-	#this setup seems to be hurting my later solution... o.O;;
-	#for iteration in range(3): #just in case a new place opens up that's better...
-	#	for c in xrange(customerCount):
-	#		cust = customerCosts[c]
-	#		current_cost = cust[solution[c]]
-	#		if usage_count[solution[c]] == 1:
-	#			current_cost += warehouses[solution[c]][1]
-
-	#		for w in xrange(warehouseCount):
-	#			new_cost = cust[w] + (warehouses[w][1] if usage_count[w] == 0 else 0)
-	#			if new_cost <  current_cost and capacityRemaining[w] > customerSizes[c]:
-	#				solution[c] = w
-	#				capacityRemaining[w] -= customerSizes[c]
-	#				usage_count[w] +=1
-
-
 
 
 	###################################################	
@@ -111,7 +110,7 @@ def solveIt(inputData):
 					improvements[w][c] = customerCosts[c][solution[c]] - customerCosts[c][w] 
 				improvements[w][c] = max(improvements[w][c],0)
 	
-		for w in xrange(warehouseCount):
+		for w in xrange(warehouseCount-1,-1,-1):
 			warehouse = improvements[w]
 			warehouse_gain = sum(warehouse)
 
