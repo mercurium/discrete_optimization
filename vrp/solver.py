@@ -73,16 +73,17 @@ def get_tour_start(customerCount,vehicleCount,vehicleCapacity,customers, distanc
 	seen.add(first_location)
 	vehicleTours[0].append(first_location)
 	for vehicle in range(1,len(vehicleTours)):  #After that, add the point that's furthest from current points
-		max_dist = 0 
-		for c in range(customerCount):
-			dist_vehicle = sum( [ distance[(x[0],c)]  for x in vehicleTours[:vehicle] ] ) * (random.random() * 3)
-			if dist_vehicle > max_dist and c not in seen:
+		max_dist = 10**8
+		for c in range(1,customerCount):
+			dist_vehicle = sum( [ distance[(x[0],c)]  for x in vehicleTours[:vehicle] ] ) * (.3 + random.random() ) 
+			if dist_vehicle < max_dist and c not in seen:
 				max_dist = dist_vehicle
 				max_vehicle = c
 
 		vehicleTours[vehicle].append(max_vehicle)
 		capacityRemaining[vehicle] -= customers[max_vehicle][0]		
 		seen.add(max_vehicle)
+
 	return vehicleTours, capacityRemaining, seen
 
 def solveIt(inputData):
@@ -114,7 +115,7 @@ def solveIt(inputData):
 
 	best_seen = float('inf')
 	error_count = 0
-	for iteration in xrange(5000):
+	for iteration in xrange(500000):
 		vehicleTours, capacityRemaining, seen = get_tour_start(customerCount,vehicleCount, vehicleCapacity, customers, distance)
 
 		
@@ -127,9 +128,7 @@ def solveIt(inputData):
 			for vehicle in range(vehicleCount):
 				if capacityRemaining[vehicle] < customers[city][0]:
 					continue
-				#dist = distance[(vehicleTours[vehicle][-1],city)] + distance[(city,0)] - distance[(0,vehicleTours[vehicle][-1])]
 				dist = sum( [distance[(vehicleTours[vehicle][i],city)] for i in xrange(len(vehicleTours[vehicle])) ])
-				#dist = dist * 1.0 / len(vehicleTours[vehicle])
 				if dist < min_dist:
 					min_dist = dist
 					min_vehicle = vehicle
@@ -167,9 +166,7 @@ def solveIt(inputData):
 				if obj < best_obj:
 					best_obj = obj
 					best_vehicle_sol = vehicleTours[tour][:]
-			#		print "IMPROVEMENT UNLOCKED!!!", obj 
 				iters +=1
-			#	print obj, iters, best_obj
 
 			vehicleTours[tour] = best_vehicle_sol
 
@@ -195,7 +192,7 @@ def solveIt(inputData):
 			print iteration, obj#, [sum([customers[i][0] for i in vehicle]) for vehicle in vehicleTours], vehicleCapacity
 			best_seen = obj
 			best_sol = vehicleTours
-		if best_seen < 830:
+		if best_seen < 540:
 			break
 
 	vehicleTours = best_sol
