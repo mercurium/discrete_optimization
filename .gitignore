@@ -1,6 +1,5 @@
 *.mp4
 *.zip
 *.srt
-*.pyc
 *.pdf
-*/data/*
+*.swp
