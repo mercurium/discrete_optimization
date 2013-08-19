@@ -4,8 +4,8 @@ import random
 import time
 import sys
 call_count = 0
-lim = 17
-clique_size = 12
+lim = 16
+clique_size = 5
 sys.setrecursionlimit(1500)
 
 def branch_and_bound(pos, solution, nodeCount, edge_dict, order, lim):
@@ -13,27 +13,38 @@ def branch_and_bound(pos, solution, nodeCount, edge_dict, order, lim):
 	global call_count
 	call_count += 1
 	if call_count %1024 == 0:
-		print call_count
+		print call_count, pos
 	largest_seen = max(solution)
 	if largest_seen  < lim and min(solution) >= 0:  #the done case =P
 		return solution 
 	if largest_seen >= lim:  #if we got bigger than we wanted...
 		return -1
 	
+	if True: #pos < nodeCount * .9 and largest_seen + 4 < lim:
+		for i in xrange(nodeCount):
+			if solution[i] == -1:
+				set_check = set([solution[c] for c in edge_dict[i]])
+				set_check.add(-1)
+				if set_check == set(range(-1,largest_seen+1)):
+					largest_seen +=1
+					if largest_seen == lim:
+						return -1
+					solution[i] = largest_seen
+					print "will shortcut later", pos
 
-	for i in xrange(nodeCount):
-		if solution[i] == -1:
-			set_check = set([solution[c] for c in edge_dict[i]])
-			set_check.add(-1)
-			if set_check == set(range(-1,largest_seen+1)):
-				largest_seen +=1
-				if largest_seen == lim:
-					return -1
-				solution[i] = largest_seen
-				print "will shortcut later", pos
-
+	if True: #pos < nodeCount * .9 and largest_seen + 4 < lim:
+		order_setup = [0] * nodeCount
+		for i in range(nodeCount):
+			if solution[i] != -1:
+				order_setup[i] =  (nodeCount**2 * 5,i) 
+			else:
+				order_setup[i] =  (sum(set([solution[c] for c in edge_dict[i]])) + 5 * len(edge_dict[i]), i)
+		order = [x[1] for x in sorted(order_setup)[::-1]]
 
 	next_val = order[pos]
+	while solution[next_val] != -1:
+		pos +=1
+		next_val = order[pos]
 	
 	if solution[next_val] != -1:
 		return branch_and_bound(pos+1,solution, nodeCount,edge_dict,order,lim)
@@ -131,7 +142,7 @@ def solveIt(inputData):
 
 	print "solution:", solution, '\n'
 	print "We made:", call_count, "calls in total"
-	print "This one took us:", time.time() - START
+	print "This one took us:", time.time() - START, "seconds... o.O"
 
 
 
