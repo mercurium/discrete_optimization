@@ -170,6 +170,9 @@ def solveIt(inputData):
 
 		dist = distance(points)
 		solution = get_approx_sol(points, nodeCount)[::-1]
+		best_obj = sum([dist[(solution[i],solution[i+1])] for i in xrange(nodeCount-1)]) + dist[(solution[0],solution[-1])]
+		best_sol = solution[:]
+		print solution, best_obj
 		solution = two_change(solution, dist) 
 		best_obj = sum([dist[(solution[i],solution[i+1])] for i in xrange(nodeCount-1)]) + dist[(solution[0],solution[-1])]
 		best_sol = solution[:]

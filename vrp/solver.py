@@ -201,8 +201,8 @@ def solveIt(inputData):
 			print iteration, obj #, [sum([customers[i][0] for i in tour]) for tour in vehicleTours], vehicleCapacity
 			best_seen = obj
 			best_sol = vehicleTours
-		if best_seen < 540:
-			break
+		#if best_seen < 540:
+		#	break
 
 	vehicleTours = best_sol
 
