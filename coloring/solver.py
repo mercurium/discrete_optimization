@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import random
-generating = True 
 def solveIt(inputData):
 	# Modify this code to run your optimization algorithm
 
@@ -18,16 +17,19 @@ def solveIt(inputData):
 		parts = line.split()
 		edges.append((int(parts[0]), int(parts[1]))) #end of boiler plate input parsing
 
-	#creating a dictionary of edges. edge_set[i] = set of nodes that i shares an edge with
-	edge_set = dict()
-	for i in xrange(nodeCount): edge_set[i] = set()
+	#creating a dictionary of edges. edge_dict[i] = set of nodes that i shares an edge with
+	edge_dict = dict()
+	for i in xrange(nodeCount): edge_dict[i] = set()
 	for edge in edges:
-		edge_set[edge[0]].add(edge[1])
-		edge_set[edge[1]].add(edge[0])
+		edge_dict[edge[0]].add(edge[1])
+		edge_dict[edge[1]].add(edge[0])
 
 	for i in xrange(nodeCount):
-		edge_set[i] = sorted(list(edge_set[i]))
-	################################################################################# Above this is creating the dictionary of edges...
+		edge_dict[i] = sorted(list(edge_dict[i]))
+	###################################################################
+	#########  Above this is creating the dictionary of edges... ######
+	###################################################################
+
 
 	solution = [-1] * nodeCount
 	if generating:
@@ -38,12 +40,13 @@ def solveIt(inputData):
 
 	for i in lst: 
 		temp_set = set()
-		for j in xrange(len(edge_set[i])):
-			temp_set.add(solution[edge_set[i][j]])
+		for j in xrange(len(edge_dict[i])):
+			temp_set.add(solution[edge_dict[i][j]])
 		for color in xrange(nodeCount):
 			if color not in temp_set:
 				solution[i] = color
 				break
+
 	#print lst
 	"""boiler plate provided output."""
 	# prepare the solution in the specified output format
