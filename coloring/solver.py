@@ -1,6 +1,32 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import random
+
+
+def branch_and_bound(pos, solution, nodeCount, edgeCount, edge_dict,lim):
+	#print pos, solution, lim
+	largest_seen = max(solution)
+	if largest_seen < lim and min(solution) >= 0:  #the done case =P
+		return solution 
+	if largest_seen >= lim:  #if we got bigger than we wanted...
+		return -1
+
+	temp_set = set([ solution[c] for c in edge_dict[pos]])
+	
+	for color in xrange(largest_seen+2):
+		if color not in temp_set:
+	#		print "does it even get here?"
+			new_sol = solution[:]
+			new_sol[pos] = color
+			ans = branch_and_bound(pos+1,new_sol, nodeCount,edgeCount,edge_dict,lim)
+			if ans != -1:
+				return ans	
+	return -1
+
+
+
+
+
 def solveIt(inputData):
 	# Modify this code to run your optimization algorithm
 
@@ -32,22 +58,23 @@ def solveIt(inputData):
 
 
 	solution = [-1] * nodeCount
-	if generating:
-		lst = range(nodeCount)
-		random.shuffle(lst)
-	else:
-		lst = range(nodeCount) 
+	lim = 6
+	solution = branch_and_bound(0, solution, nodeCount,edgeCount, edge_dict, lim)
+	print solution
 
-	for i in lst: 
-		temp_set = set()
-		for j in xrange(len(edge_dict[i])):
-			temp_set.add(solution[edge_dict[i][j]])
-		for color in xrange(nodeCount):
-			if color not in temp_set:
-				solution[i] = color
-				break
 
-	#print lst
+
+
+
+
+
+
+
+
+	#############################################################
+	################  Below this is just processing #############
+	#############################################################
+
 	"""boiler plate provided output."""
 	# prepare the solution in the specified output format
 	outputData = str(max(solution)+1) + ' ' + str(0) + '\n'
