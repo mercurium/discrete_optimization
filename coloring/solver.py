@@ -4,11 +4,11 @@ import random
 import time
 import sys
 call_count = 0
-lim = 18
+lim = 17
 clique_size = 12
 sys.setrecursionlimit(1500)
 
-def branch_and_bound(pos, solution, nodeCount, edgeCount, edge_dict, order, lim):
+def branch_and_bound(pos, solution, nodeCount, edge_dict, order, lim):
 	
 	global call_count
 	call_count += 1
@@ -19,26 +19,43 @@ def branch_and_bound(pos, solution, nodeCount, edgeCount, edge_dict, order, lim)
 		return solution 
 	if largest_seen >= lim:  #if we got bigger than we wanted...
 		return -1
-
-	next_val = order[pos]
-	temp_set = set([ solution[c] for c in edge_dict[next_val]])
 	
 
+	for i in xrange(nodeCount):
+		if solution[i] == -1:
+			set_check = set([solution[c] for c in edge_dict[i]])
+			set_check.add(-1)
+			if set_check == set(range(-1,largest_seen+1)):
+				largest_seen +=1
+				if largest_seen == lim:
+					return -1
+				solution[i] = largest_seen
+				print "will shortcut later", pos
+
+
+	next_val = order[pos]
+	
+	if solution[next_val] != -1:
+		return branch_and_bound(pos+1,solution, nodeCount,edge_dict,order,lim)
+	
+	temp_set = set([ solution[c] for c in edge_dict[next_val]])
+	
 	for color in xrange(largest_seen+2):
 		if color not in temp_set:
 			new_sol = solution[:]
 			new_sol[next_val] = color
-			ans = branch_and_bound(pos+1,new_sol, nodeCount,edgeCount,edge_dict,order, lim)
+			ans = branch_and_bound(pos+1,new_sol, nodeCount,edge_dict,order, lim)
 			if ans != -1:
 				return ans
+	
 	return -1   #none of the colors above work for it...
 
 def find_clique(sol,nodeCount, eds, size, items, order):
 	if size == len(items):
 		return sol, items
+	next_sol = sol[:]
 	for i in order[len(items):]: 
 		if sum([(1 if i in eds[item] else 0) for item in items]) == len(items):
-			next_sol = sol[:]
 			next_sol[i] = len(items)
 			new_items = set(items)
 			new_items.add(i)
@@ -81,9 +98,8 @@ def solveIt(inputData):
 	#########  Above this is creating the dictionary of edges... ######
 	###################################################################
 
-
-	global lim, call_cound, clique_size
-
+	
+	global lim, call_count, clique_size
 
 
 
@@ -111,11 +127,9 @@ def solveIt(inputData):
 	print "connection values:", connection_val, '\n'
 	order = [x[1] for x in connection_val]
 	print "order", order, '\n'
+	solution = branch_and_bound(0, solution, nodeCount, edge_dict, order, lim) 
 
-	solution = branch_and_bound(0, solution, nodeCount,edgeCount, edge_dict, order, lim) 
-
-
-	print "solution:", solution
+	print "solution:", solution, '\n'
 	print "We made:", call_count, "calls in total"
 	print "This one took us:", time.time() - START
 
